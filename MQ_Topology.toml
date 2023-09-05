@@ -1,0 +1,26 @@
+[message_broker]
+host = "localhost"
+user = "guest"
+password = "guest"
+
+[[message_broker.exchanges]]
+name = "messages"
+
+[[message_broker.exchanges]]
+name = "interactions"
+
+[[message_broker.exchanges]]
+name = "memories"
+
+[[message_broker.exchanges]]
+name = "files"
+
+[[message_broker.queues]]
+name = "form_interaction"
+binds = ["messages"]
+routing_key = "received"
+
+[[message_broker.queues]]
+name = "assimilate"
+binds = ["files"]
+routing_key = "added"
