@@ -1,26 +1,35 @@
-[message_broker]
 host = "localhost"
 user = "guest"
 password = "guest"
 
-[[message_broker.exchanges]]
+[[exchanges]]
 name = "messages"
+type = "topic"
+durable = true
 
-[[message_broker.exchanges]]
+[[exchanges]]
 name = "interactions"
+type = "topic"
+durable = true
 
-[[message_broker.exchanges]]
+[[exchanges]]
 name = "memories"
+type = "topic"
+durable = true
 
-[[message_broker.exchanges]]
+[[exchanges]]
 name = "files"
+type = "topic"
+durable = true
 
-[[message_broker.queues]]
+[[queues]]
 name = "form_interaction"
-binds = ["messages"]
+[[queues.binds]]
+exchange_name = "messages"
 routing_key = "received"
 
-[[message_broker.queues]]
+[[queues]]
 name = "assimilate"
-binds = ["files"]
+[[queues.binds]]
+exchange_name = "files"
 routing_key = "added"
