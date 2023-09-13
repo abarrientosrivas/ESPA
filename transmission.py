@@ -105,6 +105,7 @@ async def set_up_bind(connection: Connection, queue_name: str, bind_data: Messag
         print(f"Queue with name '{queue_name}' bound to exchange {bind_data.exchange_name} with routing key '{bind_data.routing_key}'.", file=sys.stderr)
     except ChannelAccessRefused:
         print(f"Channel has refused access binding queue '{queue_name}' with exchange '{bind_data.exchange_name}'. Check you login configuration and user permission.", file=sys.stderr)
+        channel = await connection.channel() # Not reconnecting here will cause the program to crash on the last bind (even though it properly sets it). No clue why.
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:
