@@ -23,13 +23,13 @@ type = "topic"
 durable = true
 
 [[queues]]
-name = "form_interaction"
-[[queues.binds]]
-exchange_name = "messages"
-routing_key = "received"
-
-[[queues]]
 name = "assimilate"
 [[queues.binds]]
 exchange_name = "files"
 routing_key = "added"
+
+[[queues]]
+name = "form_interaction"
+[[queues.binds]]
+exchange_name = "messages"
+routing_key = "received"
