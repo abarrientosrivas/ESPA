@@ -4,6 +4,7 @@ from enum import Enum
 from aio_pika.exceptions import ProbableAuthenticationError, AMQPConnectionError, ChannelNotFoundEntity, ChannelClosed
 from aiormq.exceptions import ChannelAccessRefused
 from aio_pika import Connection
+from espa import exit_on_error
 import tomli, asyncio, sys, aio_pika
 
 class ExchangeType(Enum):
@@ -31,10 +32,6 @@ class TransmissionConfig(BaseModel):
     password: str
     exchanges: List[MessageExchange] = Field(default_factory=list)
     queues: List[MessageQueue] = Field(default_factory=list)
-
-def exit_on_error(message:str):
-    print(message, file=sys.stderr)
-    sys.exit()
 
 async def main(config: TransmissionConfig):
     try:
