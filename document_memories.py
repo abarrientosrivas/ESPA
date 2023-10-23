@@ -4,8 +4,8 @@ from enum import Enum
 from aio_pika.exceptions import ProbableAuthenticationError, AMQPConnectionError, ChannelNotFoundEntity, ChannelClosed
 from aiormq.exceptions import ChannelAccessRefused
 from aio_pika import Connection
-from espa import exit_on_error
-import tomli, asyncio, sys, aio_pika
+from espa import exit_on_error, File
+import tomli, asyncio, sys, aio_pika, chromadb, fitz, json
 
 class DatabaseType(int):
     IN_MEMORY = 1
@@ -19,6 +19,9 @@ class DocumentMemoriesConfig(BaseModel):
     memories_exchange: str
     memories_routing_key: str
     database_type: DatabaseType
+    
+chroma_client = chromadb.Client()
+collection = chroma_client.create_collection(name="vector_memories")
 
 async def main(config: DocumentMemoriesConfig):
     try:
@@ -32,14 +35,27 @@ async def main(config: DocumentMemoriesConfig):
             exit_on_error("Connection failed: unable to connect to the RabbitMQ server")
         except Exception as e:
             exit_on_error(f"An unexpected error occurred while connecting to RabbitMQ server: {e}")
-
-        # start consuming from the right queue
+        channel = await connection.channel()
+        queue = await channel.get_queue(config.assimilate_file_mq)
+        async with queue.iterator() as queue_iter:
+            async for message in queue_iter:
+                async with message.process():
+                    try:
+                        data = File(**json.loads(message.body.decode()))
+                    except json.JSONDecodeError:
+                        print(f"Error: Failed to decode JSON in message body, Data: {message.body}")
+                        continue
+                    except ValidationError as validation_error:
+                        print(f"Validation error: {str(validation_error)}")
+                        continue
+                    await consume_file(data)
                 
         print("Finished executing.", file=sys.stderr)
     except asyncio.CancelledError:
         print("Execution was cancelled prematurely.", file=sys.stderr)
 
-async def consume_file():
+async def consume_file(file: File):
+    print(file.file_name)
     # try to read the file
     # save general metadata
     # batch content for storage

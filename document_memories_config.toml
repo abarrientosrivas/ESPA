@@ -1,0 +1,7 @@
+host = "localhost"
+user = "guest"
+password = "guest"
+assimilate_file_mq = "assimilate"
+memories_exchange = "memories"
+memories_routing_key = "created"
+database_type = 1
