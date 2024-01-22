@@ -1,7 +1,19 @@
-import chromadb, fitz
+import chromadb, fitz, re
+
+def remove_non_ascii(strings):
+    cleaned_strings = []
+    for string in strings:
+        # Keeping only ASCII characters from 32 to 126
+        cleaned_string = re.sub(r'[^\x20-\x7E\u00C0-\u00FF]', '', string)
+        if cleaned_string and not cleaned_string.isspace():
+            cleaned_strings.append(cleaned_string)
+    return cleaned_strings
 
 def split_into_paragraphs(text):
-    paragraphs = text.splitlines(keepends=True)
+    # Splitting the text into paragraphs at one or more newline characters
+    paragraphs = text.split('.\n')
+    # Stripping extra whitespace and filtering out empty paragraphs
+    paragraphs = [p.strip() for p in paragraphs if p.strip()]
     return paragraphs
 
 def split_into_blocks(text: str, batch_size: int, overlap_size: int) -> list:
@@ -24,8 +36,8 @@ def secuence_id_list(size: int) -> list:
         secuence_list.append(str(num))
     return secuence_list
 
-# doc = fitz.open('D:/Documents/EP 2537_01 (Sistemas SCADA).pdf')
-doc = fitz.open('F:\\Media\\books\\Libro_de_Enoc.pdf')
+doc = fitz.open('D:\\Downloads\\Angeio - Presentación de Proyecto.pdf')
+# doc = fitz.open('F:\\Media\\books\\Libro_de_Enoc.pdf')
 text_content = []
 
 for page_num in range(len(doc)):
@@ -34,7 +46,10 @@ for page_num in range(len(doc)):
 
 complete_text = "\n".join(text_content)
 
-text_blocks = split_into_blocks(complete_text, 1000, 200)
+text_blocks = split_into_paragraphs(complete_text)
+print(len(text_blocks))
+text_blocks = remove_non_ascii(text_blocks)
+print(len(text_blocks))
 
 chroma_client = chromadb.Client()
 
@@ -51,7 +66,7 @@ collection.add(
 print("database loaded")
 
 results = collection.query(
-    query_texts=["Quienes eran los vigilantes"],
+    query_texts=["¿Cuál es el motor del módulo de razonamiento?"],
     n_results=5
 )
 
