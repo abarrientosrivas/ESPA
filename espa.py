@@ -10,6 +10,7 @@ class File(BaseModel):
     file_name: str
 
 class Memory(BaseModel):
+    id: str
     created_at: str
     content: str
     
