@@ -5,7 +5,8 @@ from aio_pika.exceptions import ProbableAuthenticationError, AMQPConnectionError
 from aiormq.exceptions import ChannelAccessRefused
 from aio_pika import Connection
 from espa import exit_on_error, File, Memory
-import tomli, asyncio, sys, aio_pika, chromadb, fitz, json, re, uuid, datetime, os
+from datetime import datetime
+import tomli, asyncio, sys, aio_pika, chromadb, fitz, json, re, uuid, os
 
 class DocumentMemoriesConfig(BaseModel):
     host: str
@@ -54,7 +55,7 @@ async def main(config: DocumentMemoriesConfig):
                         print(f"Validation error: {str(validation_error)}")
                         continue
                     exchange = await publisher_channel.get_exchange(config.memories_exchange)
-                    await consume_file(data, collection, exchange, config)
+                    await consume_file(data, collection, exchange, config.memories_routing_key)
                 
         print("Finished executing.", file=sys.stderr)
     except asyncio.CancelledError:
@@ -77,11 +78,12 @@ async def consume_file(file: File, collection, exchange, routing_key: str):
         )
 
         await exchange.publish(
-            aio_pika.Message(body=Memory(created_at=datetime.utcnow(), content=batch, id=id).model_dump_json().encode()),
+            aio_pika.Message(body=Memory(created_at=datetime.utcnow().isoformat(), content=batch, id=id).model_dump_json().encode()),
             routing_key=routing_key
         )
+        print(f"batching makes me feel good")
 
-    print(f"Memories from file {file.file_name} extracted.", file=sys.stderr)
+    print(f"{len(batches)} memories from file {file.file_name} extracted.", file=sys.stderr)
 
 def GetFileTextContent(filename: str) -> str:
     doc = fitz.open(filename)
