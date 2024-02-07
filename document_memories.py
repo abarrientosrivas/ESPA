@@ -5,7 +5,7 @@ from aio_pika.exceptions import ProbableAuthenticationError, AMQPConnectionError
 from aiormq.exceptions import ChannelAccessRefused
 from aio_pika import Connection
 from espa import exit_on_error, File, Memory
-import tomli, asyncio, sys, aio_pika, chromadb, fitz, json, re, uuid, datetime
+import tomli, asyncio, sys, aio_pika, chromadb, fitz, json, re, uuid, datetime, os
 
 class DocumentMemoriesConfig(BaseModel):
     host: str
@@ -61,6 +61,10 @@ async def main(config: DocumentMemoriesConfig):
         print("Execution was cancelled prematurely.", file=sys.stderr)
 
 async def consume_file(file: File, collection, exchange, routing_key: str):
+    if not os.path.exists(file.file_path):
+        print(f"Target file at '{file.file_path}' not found, skipping.")
+        return
+
     print(f"Extracting memories from file {file.file_name}.", file=sys.stderr)
     batches = remove_non_ascii(split_into_paragraphs(GetFileTextContent(file.file_path)))
 
@@ -78,24 +82,6 @@ async def consume_file(file: File, collection, exchange, routing_key: str):
         )
 
     print(f"Memories from file {file.file_name} extracted.", file=sys.stderr)
-
-if __name__ == "__main__":
-    if len(sys.argv) == 2:
-        config_file_path = sys.argv[1]
-    else:
-        exit_on_error("Expected configuration file path as argument.")
-    try:
-        with open(config_file_path, "rb") as file:
-            config_dict = tomli.load(file)
-            config = DocumentMemoriesConfig(**config_dict)
-    except ValidationError as e:
-        exit_on_error(f"Failed to validate configuration: {e}")
-    except tomli.TOMLDecodeError as e:
-        exit_on_error(f"Failed to parse TOML file: {e}")
-    except FileNotFoundError:
-        exit_on_error(f"File not found: {config_file_path}")
-    
-    asyncio.run(main(config))
 
 def GetFileTextContent(filename: str) -> str:
     doc = fitz.open(filename)
@@ -118,3 +104,21 @@ def split_into_paragraphs(text: str) -> List[str]:
     paragraphs = text.split('.\n')
     paragraphs = [p.strip() for p in paragraphs if p.strip()]
     return paragraphs
+
+if __name__ == "__main__":
+    if len(sys.argv) == 2:
+        config_file_path = sys.argv[1]
+    else:
+        exit_on_error("Expected configuration file path as argument.")
+    try:
+        with open(config_file_path, "rb") as file:
+            config_dict = tomli.load(file)
+            config = DocumentMemoriesConfig(**config_dict)
+    except ValidationError as e:
+        exit_on_error(f"Failed to validate configuration: {e}")
+    except tomli.TOMLDecodeError as e:
+        exit_on_error(f"Failed to parse TOML file: {e}")
+    except FileNotFoundError:
+        exit_on_error(f"File not found: {config_file_path}")
+    
+    asyncio.run(main(config))
